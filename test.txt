@@ -1,0 +1,289 @@
+trigger:
+  branches:
+    include:
+      - "feature/docker"
+
+resources:
+ repositories:
+ - repository: handheldScannerApi
+   type: git
+   persistCredentials: true
+   name: 'Handheld Scanner Api'
+   ref: refs/heads/helm-deploy
+
+variables:
+  # APIM environment
+  apimApiName: "handheld-scanner-api"
+  gitRepoName: "dev.azure.com/Staples-Canada-ULC/Handheld%20Scanner/_git/Handheld%20Scanner%20API"
+
+
+  #
+  # Variables for Development environment
+  #
+  dockerRegistryServiceConnectionDev: "enterprisenonpacr"
+  acrRepoNameDev: "enterprisenonpacr.azurecr.io"
+  acrRepoDev: "enterprisenonpacr.azurecr.io/handheld-scanner/handheld-scanner-api"
+  imageRepositoryDev: 'handheld-scanner-api'
+  containerRegistryDev: 'enterprisenonpacr.azurecr.io'
+
+
+  # Application environment
+
+  # K8S Environment
+  k8sNamespaceDev: "handheld-scanner-dev"
+  k8sAppSecretDev: "handheld-scanner-dev-secret"
+
+  # Azure Resource Manager connection
+  azureSubscriptionDev: "staples-canada-ulc-nonp"
+
+  #
+  # Variables for Staging environment
+  #
+  acrRepoNameStg: "enterprisenonpacr"
+  acrRepoStg: "enterprisenonpacr.azurecr.io/handheld-scanner/handheld-scanner-api"
+
+  # Application environment
+
+
+  # K8S environment
+  k8sNamespaceStg: "handheld-scanner-stg"
+  k8sAppSecretStg: "handheld-scanner-stg-secret"
+
+  # Azure Resource Manager connection
+  azureSubscriptionStg: "staples-canada-ulc-nonp"
+
+  #
+  # Variables for Production environment
+  #
+
+  dockerRegistryServiceConnectionProd: "enterpriseprodacr"
+  acrRepoNameProd: "enterpriseprodacr.azurecr.io"
+  acrRepoProd: "enterpriseprodacr.azurecr.io/handheld-scanner/handheld-scanner-api"
+  imageRepositoryProd: 'handheld-scanner-api'
+  containerRegistryProd: 'enterpriseprodacr.azurecr.io'
+
+  # Application environment
+
+
+  # K8S environment
+  k8sNamespaceProd: "handheld-scanner-prod"
+  k8sAppSecretProd: "handheld-scanner-prod-secret"
+
+  # Azure Resource Manager connection
+  azureSubscriptionProd: "staples-canada-ulc-prod"
+
+  # Image tag
+  tag: '$(Build.BuildId)'
+
+stages:
+  - stage: Build
+    displayName: Build stage
+    jobs:
+      - job: BuildJob
+        displayName: Build
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - script: |
+              echo "Code revision - $(Build.SourceVersion)"
+              SourceVersion=$(Build.SourceVersion)
+              ShortVersion=${SourceVersion:0:7}
+              AppVersion="$(date +'%Y%m%d').$ShortVersion"
+              echo "Build version - $ShortVersion"
+              echo "##vso[task.setvariable variable=Short;isOutput=true]$ShortVersion"
+              echo "##vso[task.setvariable variable=App;isOutput=true]$AppVersion"
+            displayName: "Set version"
+            name: Version
+          - task: Docker@2
+            displayName: Build
+            inputs:
+              containerRegistry: "$(dockerRegistryServiceConnectionDev)"
+              repository: "$(imageRepositoryDev)"
+              command: build
+              Dockerfile: 'dockerfile'
+              arguments: |
+                --build-arg MONGODB_CONNECTION_STRING="mongodb://store-dev-cosmos-acct-poc:*********************************************************************************************************************************@store-dev-cosmos-acct-poc.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@store-dev-cosmos-acct-poc@"
+                --build-arg JWT_SECRET="DSkjd0nunHz4CmdOGHBC8lkJMF8fvTnZsde5MXM5Eon2kD5vML"
+                --build-arg REFRESH_TOKEN_JWT_SECRET="FC87wX8ohGa6oLNIPytsulOy79TATuODPMytgzMOYUVa8l4RoQ"
+                --build-arg ADMIN_JWT_SECRET="6eYt22dyZljYfHxjhmfmFlnDcXLl0Nz2BGbwd3bH9nH4plamym"
+                --build-arg DASHBOARD_URL="https://dev.tools.staples.ca/store/mobileapp/admin"
+                --build-arg AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=handheldscannersa;AccountKey=uSHFufJGpPXnRNx16Dwg9ubQJ/+wyE8VAHCfhs7iOTVjQY8cOEu7hyYLhZ2ahKb9TFtyxUHxFojv+AStqYy1qw==;EndpointSuffix=core.windows.net"
+                --build-arg AZURE_STORAGE_CONTAINER="images"
+                --build-arg AZURE_STORAGE_ACCESS_KEY="uSHFufJGpPXnRNx16Dwg9ubQJ/+wyE8VAHCfhs7iOTVjQY8cOEu7hyYLhZ2ahKb9TFtyxUHxFojv+AStqYy1qw=="
+                --build-arg AZURE_STORAGE_ACCOUNT_NAME="handheldscannersa"
+              tags: |
+                $(tag)
+          - task: Docker@2
+            displayName: "Push to none-production ACR"
+            inputs:
+              containerRegistry: "$(dockerRegistryServiceConnectionDev)"
+              repository: "$(imageRepositoryDev)"
+              command: push
+              tags: |
+                $(tag)
+          - task: CmdLine@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                docker tag $(containerRegistryDev)/$(imageRepositoryDev):$(tag) $(containerRegistryProd)/$(imageRepositoryProd):$(tag)
+            displayName: 'Tag Prod image'
+          - task: Docker@2
+            displayName: "Push to production ACR"
+            inputs:
+              containerRegistry: "$(dockerRegistryServiceConnectionProd)"
+              repository: "$(imageRepositoryProd)"
+              command: push
+              tags: |
+                $(tag)
+  - stage: DeployDev
+    jobs:
+    - job: DeployDevHelm
+      steps:
+      - checkout: handheldScannerApi
+        clean: true
+        persistCredentials: true
+      - task: CmdLine@2
+        inputs:
+          targetType: 'inline'
+          script: |
+            git config --global user.email "azuredevops@staples.ca"
+            git config --global user.name "Azure DevOps"
+            git fetch https://$(PAT)@$(gitRepoName)
+
+            # Check if the helm-deploy branch exists remotely
+            if git show-ref --quiet refs/remotes/origin/helm-deploy; then
+              git checkout helm-deploy
+              git pull origin helm-deploy
+              echo "Branch exists"
+              git rev-parse --abbrev-ref HEAD
+            else
+              git checkout -b helm-deploy
+              echo "Branch does not exist"
+              git rev-parse --abbrev-ref HEAD
+            fi
+
+            # Performing changes
+            envsubst < handheld-scanner-api/values-template.yaml > handheld-scanner-api/values.yaml
+            cat handheld-scanner-api/values.yaml
+
+            git add --all
+            git commit -m "Update image tag to $(tag)"
+
+            # Pushing changes
+            git push origin helm-deploy
+        displayName: 'Push to helm-deploy repo'
+        env:
+          PAT: $(PAT)
+          TAG: $(tag)
+
+          HOST: "api.dev.aks.staplescan.com"
+          MONGODB_CONNECTION_STRING: "mongodb://store-dev-cosmos-acct-poc:tonmslG9fq6RnFSk1O266OjO4FF1fCTFYPWd2g7Ya62PyJw7zSC4B6Az0XEin9ZLdRAzEZJtvVjZACDbOKGABg==@store-dev-cosmos-acct-poc.mongo.cosmos.azure.com:10255/?ssl: true&replicaSet: globaldb&retrywrites: false&maxIdleTimeMS: 120000&appName: @store-dev-cosmos-acct-poc@"
+          JWT_SECRET: "DSkjd0nunHz4CmdOGHBC8lkJMF8fvTnZsde5MXM5Eon2kD5vML"
+          REFRESH_TOKEN_JWT_SECRET: "FC87wX8ohGa6oLNIPytsulOy79TATuODPMytgzMOYUVa8l4RoQ"
+          ADMIN_JWT_SECRET: "6eYt22dyZljYfHxjhmfmFlnDcXLl0Nz2BGbwd3bH9nH4plamym"
+          DASHBOARD_URL: "https://stg.tools.staples.ca/store/mobileapp/admin"
+          AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol: https;AccountName: handheldscannersa;AccountKey: uSHFufJGpPXnRNx16Dwg9ubQJ/+wyE8VAHCfhs7iOTVjQY8cOEu7hyYLhZ2ahKb9TFtyxUHxFojv+AStqYy1qw: : ;EndpointSuffix: core.windows.net"
+          AZURE_STORAGE_CONTAINER: "images"
+          AZURE_STORAGE_ACCESS_KEY: "uSHFufJGpPXnRNx16Dwg9ubQJ/+wyE8VAHCfhs7iOTVjQY8cOEu7hyYLhZ2ahKb9TFtyxUHxFojv+AStqYy1qw"
+          AZURE_STORAGE_ACCOUNT_NAME: "handheldscannersa"
+  - stage: DeployStg
+    dependsOn: DeployDev
+    condition: succeeded()
+    jobs:
+    - job: DeployStgHelm
+      steps:
+      - checkout: handheldScannerApi
+        persistCredentials: true
+      - task: CmdLine@2
+        inputs:
+          targetType: 'inline'
+          script: |
+            git config --global user.email "azuredevops@staples.ca"
+            git config --global user.name "Azure DevOps"
+            git fetch https://$(PAT)@$(gitRepoName)
+
+            # Check if the helm-deploy branch exists remotely
+            if git show-ref --quiet refs/remotes/origin/feature/helm-deploy-stg; then
+              git checkout feature/helm-deploy-stg
+              git pull origin feature/helm-deploy-stg
+              echo "Branch exists"
+              git rev-parse --abbrev-ref HEAD
+            else
+              git checkout -b feature/helm-deploy-stg
+              echo "Branch does not exist"
+              git rev-parse --abbrev-ref HEAD
+            fi
+     
+            # Performing changes
+            envsubst < handheld-scanner-api/values-template.yaml > handheld-scanner-api/values.yaml
+            cat handheld-scanner-api/values.yaml
+
+            git add --all
+            git commit -m "Update image tag to $(tag)"
+            git push origin feature/helm-deploy-stg
+        displayName: 'Push to helm-deploy repo'
+        env:
+          PAT: $(PAT)
+          TAG: $(tag)
+          ACRREPO: $(containerRegistryDev)
+          HOST: "api.dev.aks.staplescan.com"
+          MONGODB_CONNECTION_STRING: "mongodb://storemobile-stg-cosmos-acct:eaXreNpLYFt69KhyhQqnUxvJdjIsTzwvL9q8C4qf0H7K6otg3OL9a0AZRc16s7uONGjHWkseNqGJACDbnj5XyA==@storemobile-stg-cosmos-acct.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@storemobile-stg-cosmos-acct@"
+          JWT_SECRET: "DSkjd0nunHz4CmdOGHBC8lkJMF8fvTnZsde5MXM5Eon2kD5vML"
+          REFRESH_TOKEN_JWT_SECRET: "FC87wX8ohGa6oLNIPytsulOy79TATuODPMytgzMOYUVa8l4RoQ"
+          ADMIN_JWT_SECRET: "6eYt22dyZljYfHxjhmfmFlnDcXLl0Nz2BGbwd3bH9nH4plamym"
+          DASHBOARD_URL: "https://stg.tools.staples.ca/store/mobileapp/admin"
+          AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=https;AccountName=storemobilestgstore1;AccountKey=e+/JbRSTgygR89fHYxOcsozWjL0C4d+sIXjtEJYMwAFmvUf5R6985j+riusn6TTQP92zBYZ9mLkC+AStAODWzA==;EndpointSuffix=core.windows.net"
+          AZURE_STORAGE_CONTAINER: "images"
+          AZURE_STORAGE_ACCESS_KEY: "e+/JbRSTgygR89fHYxOcsozWjL0C4d+sIXjtEJYMwAFmvUf5R6985j+riusn6TTQP92zBYZ9mLkC+AStAODWzA=="
+          AZURE_STORAGE_ACCOUNT_NAME: "storemobilestgstore1"
+
+  - stage: DeployProd
+    dependsOn: DeployStg
+    condition: succeeded()
+    jobs:
+    - job: DeployProdHelm
+      steps:
+      - checkout: handheldScannerApi
+        persistCredentials: true
+      - task: CmdLine@2
+        inputs:
+          targetType: 'inline'
+          script: |
+            git config --global user.email "azuredevops@staples.ca"
+            git config --global user.name "Azure DevOps"
+            git fetch https://$(PAT)@$(gitRepoName)
+
+            # Check if the helm-deploy branch exists remotely
+            if git show-ref --quiet refs/remotes/origin/helm-deploy-prod; then
+              git checkout helm-deploy-prod
+              git pull origin helm-deploy-prod
+              echo "Branch exists"
+              git rev-parse --abbrev-ref HEAD
+            else
+              git checkout -b helm-deploy-prod
+              echo "Branch does not exist"
+              git rev-parse --abbrev-ref HEAD
+            fi
+
+            # Performing changes
+            envsubst < handheld-scanner-api/values-template.yaml > handheld-scanner-api/values.yaml
+            cat handheld-scanner-api/values.yaml
+
+            git add --all
+            git commit -m "Update image tag to $(tag)"
+            git push origin helm-deploy-prod
+        displayName: 'Push to helm-deploy repo'
+        env:
+          PAT: $(PAT)
+          TAG: $(tag)
+          ACRREPO: $(containerRegistryProd)
+          HOST: "tools.staples.ca"
+          MONGODB_CONNECTION_STRING: "mongodb://storemobile-prod-cosmos-acct:HioEe1ssmQGvLyLfrYfnLfj8AKj5TVpypOmrryRSjiq4vcncmSnMJjoyV1nI54kEqQwrCIUaevHFACDbXPZ8xg==@storemobile-prod-cosmos-acct.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@storemobile-prod-cosmos-acct@"
+          JWT_SECRET: "DSkjd0nunHz4CmdOGHBC8lkJMF8fvTnZsde5MXM5Eon2kD5vML"
+          REFRESH_TOKEN_JWT_SECRET: "FC87wX8ohGa6oLNIPytsulOy79TATuODPMytgzMOYUVa8l4RoQ"
+          ADMIN_JWT_SECRET: "6eYt22dyZljYfHxjhmfmFlnDcXLl0Nz2BGbwd3bH9nH4plamym"
+          DASHBOARD_URL: "https://tools.staples.ca/store/mobileapp/admin"
+          AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=https;AccountName=storemobilestgstore1;AccountKey=e+/JbRSTgygR89fHYxOcsozWjL0C4d+sIXjtEJYMwAFmvUf5R6985j+riusn6TTQP92zBYZ9mLkC+AStAODWzA==;EndpointSuffix=core.windows.net"
+          AZURE_STORAGE_CONTAINER: "images"
+          AZURE_STORAGE_ACCESS_KEY: "e+/JbRSTgygR89fHYxOcsozWjL0C4d+sIXjtEJYMwAFmvUf5R6985j+riusn6TTQP92zBYZ9mLkC+AStAODWzA=="
+          AZURE_STORAGE_ACCOUNT_NAME: "storemobileprodstore1"

@@ -2,3 +2,18 @@ trigger:
   branches:
     include:
       - "*"
+
+variables:
+  #
+  # Variables for Development environment
+  #
+  siteHostDev: "dev.customer.staples.ca"
+  acrRepoNameDev: "enterprisenonpacr"
+  acrRepoDev: "enterprisenonpacr.azurecr.io/ecommerce/ragnarok-web"
+
+  # K8S Environment
+  k8sNamespaceDev: "ecommerce-dev"
+  k8sTlsSecretDev: "customer-staples-ca-tls-secret"
+
+  # recaptcha
+  recaptchaSiteKeyDev: "6Lfs7JwkAAAAALL0_JDVwA0NCi0xTlDnTKa-vFPT"

@@ -1,178 +1,112 @@
-trigger:
-  branches:
-    include:
-      - "*"
- 
-variables:
-  #
-  # Variables for Development environment
-  #
-  siteHostDev: "dev.customer.staples.ca"
-  acrRepoNameDev: "enterprisenonpacr"
-  acrRepoDev: "enterprisenonpacr.azurecr.io/ecommerce/ragnarok-web"
- 
-  # K8S Environment
-  k8sNamespaceDev: "ecommerce-dev"
-  k8sTlsSecretDev: "customer-staples-ca-tls-secret"
- 
-  # recaptcha
-  recaptchaSiteKeyDev: "6Lfs7JwkAAAAALL0_JDVwA0NCi0xTlDnTKa-vFPT"
- 
-  # Application settings
-  domainDev: 'dev.customer.staples.ca'
-  assetPrefixDev: 'https://dev.customer.staples.ca'
-  baseApiUrlDev: "https://dev.api.staples.ca/dev/ecommerce"
-  baseInventoryApiUrlDev: "https://stg.api.staples.ca/ecommerce"
-  baseApiUserPathDev: "/user/v1.0"
-  baseApiOrderPathDev: "/order/v1.0"
-  baseApiInventoryPathDev: "/inventory/v1.0"
-  datadogEnabledDev: "true"
-  datadogClientApplicationIdDev: "cd57d7d5-75fe-4ec0-bf7c-2d3704a9bfc5"
-  datadogClientTokenDev: "pub50e73b92f9e47b50e48c941303c2c3ec"
-  datadogSiteDev: "datadoghq.com"
-  datadogServiceDev: "nextjs-ragnarok-client"
-  shopifyStoreDomainDev: "https://worklearngrow.online"
-  appProxyDomainDev: "staples-canada-dev.myshopify.com"
-  appProxyBasePathDev: "a/application-dev"
-  bazaarVoiceScriptEnDev: "//apps.bazaarvoice.com/deployments/staplesca/main_site/staging/en_CA/bv.js?shop=staples-canada.myshopify.com"
-  bazaarVoiceScriptFrDev: "//apps.bazaarvoice.com/deployments/staplesca/main_site/staging/fr_CA/bv.js?shop=travaillierapprendreevoluer.com"
-  algoliaProjectIdDev: "H5YOVYKINU"
-  algoliaApiKeyDev: "e4ce50ff37c38b6132d9a01b2623942c"
- 
- 
-  # Azure Resource Manager connection
-  azureSubscriptionDev: "staples-canada-ulc-nonp"
- 
-  #
-  # Variables for Staging environment
-  #
-  siteHostStg: "stg.customer.staples.ca"
-  acrRepoNameStg: "enterprisenonpacr"
-  acrRepoStg: "enterprisenonpacr.azurecr.io/ecommerce/ragnarok-web"
- 
-  # K8S Environment
-  k8sNamespaceStg: "ecommerce-stg"
-  k8sTlsSecretStg: "customer-staples-ca-tls-secret"
- 
-  # recaptcha
-  recaptchaSiteKeyStg: "6Lfs7JwkAAAAALL0_JDVwA0NCi0xTlDnTKa-vFPT"
- 
-  # Application settings
-  domainStg: 'stg.customer.staples.ca'
-  assetPrefixStg: 'https://stg.customer.staples.ca'
-  baseApiUrlStg: "https://stg.api.staples.ca/ecommerce"
-  baseInventoryApiUrlStg: "https://stg.api.staples.ca/ecommerce"
-  baseApiUserPathStg: "/user/v1.0"
-  baseApiOrderPathStg: "/order/v1.0"
-  baseApiInventoryPathStg: "/inventory/v1.0"
-  datadogEnabledStg: "true"
-  datadogClientApplicationIdStg: "cd57d7d5-75fe-4ec0-bf7c-2d3704a9bfc5"
-  datadogClientTokenStg: "pub50e73b92f9e47b50e48c941303c2c3ec"
-  datadogSiteStg: "datadoghq.com"
-  datadogServiceStg: "nextjs-ragnarok-client"
-  shopifyStoreDomainStg: "https://worklearngrow.online"
-  appProxyDomainStg: "staples-canada-dev.myshopify.com"
-  appProxyBasePathStg: "apps/application"
-  bazaarVoiceScriptEnStg: "//apps.bazaarvoice.com/deployments/staplesca/main_site/staging/en_CA/bv.js?shop=staples-canada.myshopify.com"
-  bazaarVoiceScriptFrStg: "//apps.bazaarvoice.com/deployments/staplesca/main_site/staging/fr_CA/bv.js?shop=travaillierapprendreevoluer.com"
-  algoliaProjectId: "H5YOVYKINU"
-  algoliaApiKey: "4689de77d9aedbf48bf24a6da6cbebdd"
- 
-  # Azure Resource Manager connection
-  azureSubscriptionStg: "staples-canada-ulc-nonp"
- 
-  #
-  # Variables for Production environment
-  #
-  siteHostProd: "customer.staples.ca"
-  acrRepoNameProd: "enterpriseprodacr"
-  acrRepoProd: "enterpriseprodacr.azurecr.io/ecommerce/ragnarok-web"
- 
-  # K8S Environment
-  k8sNamespaceProd: "ecommerce-prod"
-  k8sTlsSecretProd: "customer-staples-ca-tls-secret"
- 
-  # recaptcha
-  recaptchaSiteKeyProd: "6LciDp0kAAAAACTwAAK_wVHnC9jc_Vx9P-7OWaMt"
- 
-  # Application settings
-  domainProd: 'customer.staples.ca'
-  assetPrefixProd: 'https://customer.staples.ca'
-  baseApiUrlProd: "https://api.staples.ca/ecommerce"
-  baseInventoryApiUrlProd: "https://api.staples.ca/ecommerce"
-  baseApiUserPathProd: "/user/v1.0"
-  baseApiOrderPathProd: "/order/v1.0"
-  baseApiInventoryPathProd: "/inventory/v1.0"
-  datadogEnabledProd: "true"
-  datadogClientApplicationIdProd: "cd57d7d5-75fe-4ec0-bf7c-2d3704a9bfc5"
-  datadogClientTokenProd: "pub50e73b92f9e47b50e48c941303c2c3ec"
-  datadogSiteProd: "datadoghq.com"
-  datadogServiceProd: "nextjs-ragnarok-client"
-  shopifyStoreDomainProd: "https://www.staples.ca"
-  appProxyDomainProd: "staples-canada.myshopify.com"
-  appProxyBasePathProd: "a/customer"
-  bazaarVoiceScriptEnProd: "//apps.bazaarvoice.com/deployments/staplesca/main_site/production/en_CA/bv.js?shop=staples-canada.myshopify.com"
-  bazaarVoiceScriptFrProd: "//apps.bazaarvoice.com/deployments/staplesca/main_site/production/fr_CA/bv.js?shop=travaillierapprendreevoluer.com"
- 
-  # Azure Resource Manager connection
-  azureSubscriptionProd: "staples-canada-ulc-prod"
- 
-stages:
-  - stage: Test
-    displayName: Test stage
-    pool:
-      vmImage: "ubuntu-latest"
-    jobs:
-      - job: UnitTestJob
-        displayName: Unit Test
-        steps:
-          - script: |
-              envsubst < .env.template > .env
-              cat .env
-            displayName: "Configure .env file"
-            workingDirectory: "$(System.DefaultWorkingDirectory)"
-            env:
-              DOMAIN: "$(domainDev)"
-              ASSET_PREFIX: "$(assetPrefixDev)"
-              BASE_API_URL: "$(baseApiUrlDev)"
-              BASE_INVENTORY_API_URL: "$(baseInventoryApiUrlDev)"
-              BASE_API_USER_PATH: "$(baseApiUserPathDev)"
-              BASE_API_ORDER_PATH: "$(baseApiOrderPathDev)"
-              BASE_API_INVENTORY_PATH: "$(baseApiInventoryPathDev)"
-              DATADOG_ENABLED: "$(datadogEnabledDev)"
-              DATADOG_APPLICATION_ID: "$(datadogClientApplicationIdDev)"
-              DATADOG_CLIENT_TOKEN: "$(datadogClientTokenDev)"
-              DATADOG_SITE: "$(datadogSiteDev)"
-              DATADOG_SERVICE: "$(datadogServiceDev)"
-              SHOPIFY_STORE_DOMAIN: "$(shopifyStoreDomainDev)"
-              APP_PROXY_DOMAIN: "$(appProxyDomainDev)"
-              APP_PROXY_BASEPATH: "$(appProxyBasePathDev)"
-              BAZAARVOICE_SCRIPT_EN: "$(bazaarVoiceScriptEnDev)"
-              APP_PROXY_SECRET: $(SECRET_DEV_SHOPIFY_APP_PROXY_SECRET)
-              RECAPTCHA_SITE_KEY: "$(recaptchaSiteKeyDev)"
-          - script: |
-              
-              #sed -i 's|\[BASE64_ENCODED_PERSONAL_ACCESS_TOKEN\]|'"$(echo -n $(PAT) | base64)"'|' .npmrc
-              #sed -i 's|\[BASE64_ENCODED_PERSONAL_ACCESS_TOKEN\]|'"$(PAT)"'|' .npmrc
-              npm install
-            displayName: "npm install"
-          - script: |
-              yarn lint
-            displayName: "Run lint"
-          - script: |
-              yarn run jest
-            displayName: "Run jest"
-          - task: ArchiveFiles@2
-            displayName: "Archive K8S deployment template"
-            inputs:
-              rootFolderOrFile: ragnarok-web-template.yaml
-              includeRootFolder: false
-              archiveFile: "$(Build.ArtifactStagingDirectory)/deployment-$(Version.Short).zip"
-          - task: PublishBuildArtifacts@1
-            displayName: "Publish build artifacts to Azure Pipelines"
-            inputs:
-              PathtoPublish: "$(Build.ArtifactStagingDirectory)"
-has context menu
-
-
-  recaptchaSiteKeyDev: "6Lfs7JwkAAAAALL0_JDVwA0NCi0xTlDnTKa-vFPT"
+apiVersion: v1
+kind: Service
+metadata:
+  name: $K8S_PROJECT-$K8S_ENV-backend
+  labels:
+    project: $K8S_PROJECT
+    environment: $K8S_ENV
+    app: backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+  selector:
+    project: $K8S_PROJECT
+    environment: $K8S_ENV
+    app: backend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $K8S_PROJECT-$K8S_ENV-backend
+  labels:
+    project: $K8S_PROJECT
+    environment: $K8S_ENV
+    app: backend
+    version: "$K8S_VERSION"
+    tags.datadoghq.com/service: $K8S_PROJECT
+spec:
+  replicas: $K8S_APP_REPLICAS
+  selector:
+    matchLabels:
+      project: $K8S_PROJECT
+      environment: $K8S_ENV
+      app: backend
+  template:
+    metadata:
+      labels:
+        project: $K8S_PROJECT
+        environment: $K8S_ENV
+        app: backend
+        version: "$K8S_VERSION"
+        tags.datadoghq.com/service: $K8S_PROJECT
+    spec:
+      nodeSelector:
+        "kubernetes.azure.com/agentpool": linux
+      volumes:
+        - name: app-settings
+          secret:
+            secretName: $K8S_PROJECT-$K8S_ENV-backend-app-settings-secret
+      containers:
+        - name: $K8S_PROJECT-$K8S_ENV-backend
+          image: $K8S_IMAGE_URI:$K8S_IMAGE_TAG
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: DD_ENV
+              value: sc-eai-$K8S_ENV
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['version']
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_TRACE_SAMPLE_RATE
+              value: "1"
+            - name: DD_RUNTIME_METRICS_ENABLED
+              value: "true"
+            - name: DD_KUBERNETES_POD_LABELS_AS_TAGS
+              value: '{"project":"app"}'
+          volumeMounts:
+            - name: app-settings
+              mountPath: /app/appsettings.Production.json
+              subPath: appsettings.Production.json
+              readOnly: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: $K8S_PROJECT-$K8S_ENV-backend-ingress
+  labels:
+    project: $K8S_PROJECT
+    environment: $K8S_ENV
+    app: backend
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  tls:
+    - hosts:
+        - $K8S_APP_FQDN
+  rules:
+    - host: $K8S_APP_FQDN
+      http:
+        paths:
+          - path: /mw/eai/$K8S_APP_VERSION/apidata/itemapi(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: $K8S_PROJECT-$K8S_ENV-backend
+                port:
+                  number: 80

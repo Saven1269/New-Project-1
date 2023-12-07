@@ -103,7 +103,7 @@ spec:
     - host: $K8S_APP_FQDN
       http:
         paths:
-          - path: /mw/eai/$K8S_APP_VERSION/apidata/itemapi(/|$)(.*)
+          - path: /mw/eai/v1.0/apidata/userapi(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:

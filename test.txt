@@ -1,54 +1,56 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: $K8S_PROJECT-$K8S_ENV-backend
-  labels:
-    project: $K8S_PROJECT
-    environment: $K8S_ENV
-    app: backend
-spec:
-  type: ClusterIP
-  ports:
-    - port: 80
-  selector:
-    project: $K8S_PROJECT
-    environment: $K8S_ENV
-    app: backend
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: $K8S_PROJECT-$K8S_ENV-backend
+  name: $K8S_PROJECT-$K8S_ENV-$K8S_APP_NAME
   labels:
     project: $K8S_PROJECT
     environment: $K8S_ENV
-    app: backend
+    app: $K8S_APP_NAME
     version: "$K8S_VERSION"
-    tags.datadoghq.com/service: $K8S_PROJECT
+    tags.datadoghq.com/service: $K8S_PROJECT-$K8S_APP_NAME
 spec:
   replicas: $K8S_APP_REPLICAS
   selector:
     matchLabels:
       project: $K8S_PROJECT
       environment: $K8S_ENV
-      app: backend
+      app: $K8S_APP_NAME
   template:
     metadata:
       labels:
         project: $K8S_PROJECT
         environment: $K8S_ENV
-        app: backend
+        app: $K8S_APP_NAME
         version: "$K8S_VERSION"
-        tags.datadoghq.com/service: $K8S_PROJECT
+        tags.datadoghq.com/service: $K8S_PROJECT-$K8S_APP_NAME
     spec:
       nodeSelector:
         "kubernetes.azure.com/agentpool": linux
       volumes:
+        - name: sftp-external-fs
+          persistentVolumeClaim:
+            claimName: sftp-external-fs
+        azureFile:
+          secretName: $K8S_PROJECT-$K8S_ENV-fs-secret
+          shareName: sftp
+          readOnly: false
+        - name: sftp-internal-fs
+          persistentVolumeClaim:
+           claimName: sftp-internal-fs
+        azureFile:
+          secretName: $K8S_PROJECT-$K8S_ENV-fs-secret
+          shareName: sftp-internal
+          readOnly: false
+        - name: jobconfig-fs
+          azureFile:
+            secretName: $K8S_PROJECT-$K8S_ENV-fs-secret
+            shareName: jobconfig
+            readOnly: true
         - name: app-settings
           secret:
-            secretName: $K8S_PROJECT-$K8S_ENV-backend-app-settings-secret
+            secretName: $K8S_PROJECT-$K8S_ENV-$K8S_APP_NAME-app-settings-secret
       containers:
-        - name: $K8S_PROJECT-$K8S_ENV-backend
+        - name: $K8S_PROJECT-$K8S_ENV-$K8S_APP_NAME
           image: $K8S_IMAGE_URI:$K8S_IMAGE_TAG
           imagePullPolicy: IfNotPresent
           ports:
@@ -59,7 +61,7 @@ spec:
                 fieldRef:
                   fieldPath: status.hostIP
             - name: DD_ENV
-              value: sc-eai-$K8S_ENV
+              value: sc-$K8S_PROJECT-$K8S_ENV
             - name: DD_SERVICE
               valueFrom:
                 fieldRef:
@@ -77,36 +79,13 @@ spec:
             - name: DD_KUBERNETES_POD_LABELS_AS_TAGS
               value: '{"project":"app"}'
           volumeMounts:
+            - name: sftp-internal-fs
+              mountPath: /mnt/sftpintroot
+            - name: sftp-external-fs
+              mountPath: /mnt/sftpextroot
+            - name: jobconfig-fs
+              mountPath: /mnt/jobconfig
             - name: app-settings
               mountPath: /app/appsettings.Production.json
               subPath: appsettings.Production.json
               readOnly: true
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: $K8S_PROJECT-$K8S_ENV-backend-ingress
-  labels:
-    project: $K8S_PROJECT
-    environment: $K8S_ENV
-    app: backend
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-spec:
-  tls:
-    - hosts:
-        - $K8S_APP_FQDN
-  rules:
-    - host: $K8S_APP_FQDN
-      http:
-        paths:
-          - path: /mw/eai/v1.0/apidata/userapi(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: $K8S_PROJECT-$K8S_ENV-backend
-                port:
-                  number: 80
